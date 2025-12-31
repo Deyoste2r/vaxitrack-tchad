@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VaxiTrack Tchad | Suivi Vaccination Offline</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAkElEQVQ4jWP8//8/Ay0BE12MZ2BgYKC5C4yMjBgYGBgYqOqCvXv3Mv7//5+BioBqXqCqC1C9TzUv0MQFqN6nmhdo4gK8Lvj//z/D3r17GfGpIegCdN+jegGvC9A1o3uBwMjE7n2CLkD1PkEXoHofrwtQvY/XBejex+sCdO/jdAGm9/G6AN37OF2A7n2cLsD0Pk4XoHsfpwtweR+nC9C9j9MFuLyP0wXo3sfpAlzex+kCdO/jdAGu8MPpAlzhh9MFuMIPpwtwGUMQF2AEAABHeHZAD8IwFAAAAABJRU5ErkJggg==">
+</head>
+<body>
+    <div class="container">
+        <!-- En-tête avec infos agent -->
+        <header class="app-header">
+            <div class="agent-info">
+                <h1>💉 VaxiTrack Tchad</h1>
+                <p id="agent-name">Agent: <strong>John Doe</strong> | <span id="sync-status">🟢 En ligne</span></p>
+                <p id="last-sync">Dernière synchro: <span class="timestamp">--/--/---- --:--</span></p>
+            </div>
+            <div class="stats">
+                <div class="stat-card">
+                    <span class="stat-number" id="total-vaccinations">0</span>
+                    <span class="stat-label">Vaccinations</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="pending-sync">0</span>
+                    <span class="stat-label">En attente</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation par onglets -->
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="enregistrer">➕ Enregistrer</button>
+            <button class="tab-btn" data-tab="liste">📋 Liste</button>
+            <button class="tab-btn" data-tab="rapports">📊 Rapports</button>
+            <button class="tab-btn" data-tab="parametres">⚙️ Paramètres</button>
+        </nav>
+
+        <!-- Contenu des onglets -->
+        <main class="tab-content">
+            <!-- Onglet 1: Enregistrement -->
+            <div id="enregistrer" class="tab-pane active">
+                <form id="vaccination-form">
+                    <div class="form-group">
+                        <label for="child-name">Nom de l'enfant *</label>
+                        <input type="text" id="child-name" placeholder="Ex: Mariam Mahamat" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="child-age">Âge (mois) *</label>
+                            <input type="number" id="child-age" min="0" max="60" placeholder="Ex: 12" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="child-sex">Sexe *</label>
+                            <select id="child-sex" required>
+                                <option value="">Choisir</option>
+                                <option value="M">Masculin</option>
+                                <option value="F">Féminin</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="child-village">Village/Localité *</label>
+                        <select id="child-village" required>
+                            <option value="">Sélectionner un village</option>
+                            <!-- Rempli dynamiquement par app.js -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vaccine-type">Vaccin administré *</label>
+                        <select id="vaccine-type" required>
+                            <option value="">Sélectionner un vaccin</option>
+                            <option value="BCG">BCG (Tuberculose)</option>
+                            <option value="VPO">VPO (Polio oral)</option>
+                            <option value="VPI">VPI (Polio injectable)</option>
+                            <option value="PENTA">Penta (Diphtérie, Tétanos, Coqueluche...)</option>
+                            <option value="VAR">Rougeole</option>
+                            <option value="VAA">VAA (Vitamine A)</option>
+                            <option value="COVID">COVID-19</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="vaccine-date">Date de vaccination *</label>
+                            <input type="date" id="vaccine-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="vaccine-dose">Numéro de dose</label>
+                            <select id="vaccine-dose">
+                                <option value="1">1ère dose</option>
+                                <option value="2">2ème dose</option>
+                                <option value="3">3ème dose</option>
+                                <option value="Rappel">Rappel</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="agent-notes">Notes/observations</label>
+                        <textarea id="agent-notes" rows="2" placeholder="Ex: Réaction légère, parent informé..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" id="btn-save-offline" class="btn btn-primary">
+                            💾 Sauvegarder (Hors-ligne)
+                        </button>
+                        <button type="button" id="btn-sync-now" class="btn btn-secondary" disabled>
+                            🔄 Synchroniser
+                        </button>
+                    </div>
+                </form>
+
+                <div id="save-confirmation" class="confirmation" style="display: none;">
+                    <p>✅ Vaccination enregistrée localement !</p>
+                    <small>Données synchronisables dès reconnexion.</small>
+                </div>
+            </div>
+
+            <!-- Onglet 2: Liste -->
+            <div id="liste" class="tab-pane">
+                <div class="list-controls">
+                    <input type="text" id="search-list" placeholder="Rechercher par nom ou village...">
+                    <select id="filter-village">
+                        <option value="">Tous les villages</option>
+                    </select>
+                </div>
+                <div id="vaccinations-list" class="vaccinations-list">
+                    <!-- Rempli dynamiquement par app.js -->
+                    <p class="empty-state">Aucune vaccination enregistrée.</p>
+                </div>
+            </div>
+
+            <!-- Onglet 3: Rapports -->
+            <div id="rapports" class="tab-pane">
+                <div class="report-header">
+                    <h3>📊 Rapport de Performance</h3>
+                    <div class="report-period">
+                        <label>Période :</label>
+                        <select id="report-period">
+                            <option value="today">Aujourd'hui</option>
+                            <option value="week">Cette semaine</option>
+                            <option value="month">Ce mois</option>
+                            <option value="all">Tout</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="report-cards">
+                    <div class="report-card">
+                        <h4>Couverture par Vaccin</h4>
+                        <div id="vaccine-chart" class="chart-placeholder">
+                            <!-- Graphique simple en CSS/JS -->
+                            <div class="chart-bar" style="--width: 80%;" data-label="BCG">BCG: 80%</div>
+                            <div class="chart-bar" style="--width: 65%;" data-label="PENTA">PENTA: 65%</div>
+                            <div class="chart-bar" style="--width: 90%;" data-label="VPO">VPO: 90%</div>
+                        </div>
+                    </div>
+
+                    <div class="report-card">
+                        <h4>Statistiques Clés</h4>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <span class="stat-number" id="report-total">0</span>
+                                <span class="stat-label">Total Vaccinations</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number" id="report-villages">0</span>
+                                <span class="stat-label">Villages couverts</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number" id="report-girls">0</span>
+                                <span class="stat-label">Filles vaccinées</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number" id="report-boys">0</span>
+                                <span class="stat-label">Garçons vaccinés</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-actions">
+                    <button id="btn-export-csv" class="btn btn-secondary">📥 Exporter CSV</button>
+                    <button id="btn-generate-report" class="btn btn-primary">📄 Générer Rapport PDF</button>
+                    <button id="btn-email-report" class="btn btn-secondary" disabled>📧 Envoyer à la hiérarchie</button>
+                </div>
+            </div>
+
+            <!-- Onglet 4: Paramètres -->
+            <div id="parametres" class="tab-pane">
+                <div class="settings-section">
+                    <h3>Agent</h3>
+                    <div class="form-group">
+                        <label for="setting-agent-name">Nom de l'agent</label>
+                        <input type="text" id="setting-agent-name" value="John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-agent-id">Identifiant UNICEF</label>
+                        <input type="text" id="setting-agent-id" placeholder="Ex: TCD-HEALTH-001">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Synchronisation</h3>
+                    <div class="form-group">
+                        <label for="setting-sync-auto">
+                            <input type="checkbox" id="setting-sync-auto" checked>
+                            Synchronisation automatique
+                        </label>
+                        <small>Envoie les données dès qu'une connexion est détectée</small>
+                    </div>
+                    <button id="btn-manual-sync" class="btn btn-secondary">🔄 Synchroniser maintenant</button>
+                    <button id="btn-clear-data" class="btn btn-danger">🗑️ Effacer données locales</button>
+                </div>
+
+                <div class="settings-section">
+                    <h3>À propos</h3>
+                    <p><strong>VaxiTrack Tchad v1.0</strong></p>
+                    <p>Application de suivi vaccinal offline-first pour les agents de santé communautaire.</p>
+                    <p>Développée pour le contexte tchadien.</p>
+                    <p id="app-storage">Stockage utilisé: <span>0 KB</span></p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Notifications -->
+        <div id="notification" class="notification"></div>
+    </div>
+
+    <script src="app.js"></script>
+    <!-- AJOUTE CETTE LIGNE juste avant </body> -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        // Enregistre le Service Worker pour le mode offline/PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker enregistré'))
+                .catch(err => console.error('Échec enregistrement:', err));
+        }
+    </script>
+    <script>
+// Compteur de visites simple
+const visitKey = 'vaxitrack_visits';
+let visits = localStorage.getItem(visitKey) || 0;
+visits++;
+localStorage.setItem(visitKey, visits);
+console.log(`Visites VaxiTrack: ${visits}`);
+</script>
+</body>
+</html>

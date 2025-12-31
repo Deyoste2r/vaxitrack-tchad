@@ -1,0 +1,39 @@
+{
+  "name": "VaxiTrack Tchad",
+  "short_name": "VaxiTrack",
+  "description": "Application de suivi vaccinal offline pour agents de santé UNICEF Tchad",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0077C8",
+  "theme_color": "#0077C8",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTk2IDE3Ni4zNEM1MC44NSAxNzYuMzQgMTMuNjYgMTM5LjE1IDEzLjY2IDk0QzEzLjY2IDQ4Ljg1IDUwLjg1IDExLjY2IDk2IDExLjY2QzE0MS4xNSAxMS42NiAxNzguMzQgNDguODUgMTc4LjM0IDk0QzE3OC4zNCAxMzkuMTUgMTQxLjE1IDE3Ni4zNCA5NiAxNzYuMzRaIiBmaWxsPSIjMDA3N0NDIi8+PHBhdGggZD0iTTk4LjY3IDYzLjMzTDgxLjY3IDk0SDEwNi42N0w4OS42NyAxMjQuNjdIMTIyTDk2IDE2MEw3MCAxMjQuNjdIMTAyLjMzTDg1LjMzIDk0SDEwOEw5OC42NyA2My4zM1oiIGZpbGw9IndoaXRlIi8+PC9zdmc+",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAXElEQVR4nO3QQQ0AIAwDsej+jS4sBBGvA53q2d3tAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8J0NAAD//9hYBn+qW3MAAAAASUVORK5CYII=",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["health", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Nouvelle vaccination",
+      "short_name": "Nouveau",
+      "description": "Enregistrer une nouvelle vaccination",
+      "url": "/?new=1",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Voir les rapports",
+      "short_name": "Rapports",
+      "description": "Consulter les statistiques",
+      "url": "/?reports=1",
+      "icons": [{ "src": "/icons/chart-96.png", "sizes": "96x96" }]
+    }
+  ]
+}

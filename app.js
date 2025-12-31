@@ -1,0 +1,729 @@
+// ==================== CONFIGURATION ====================
+const CONFIG = {
+    APP_NAME: 'VaxiTrack Tchad',
+    VERSION: '1.0.0',
+    // URL de test pour la synchronisation (à remplacer par ton endpoint réel)
+    SYNC_ENDPOINT: 'https://api.mocky.io/api/v1/sync',
+    // Données par défaut
+    DEFAULT_VILLAGES: [
+        'Sarh Centre', 'Sarh Rural', 'Goundi', 'Koumra', 'Kyabé',
+        'Moundou', 'Doba', 'Bébédjia', 'Kélo', 'Pala',
+        'Adré', 'Goz Beida', 'Abéché', 'Am Dam', 'Mongo',
+        'Ati', 'Oum Hadjer', 'Biltine', 'Guéréda', 'Iriba'
+    ],
+    VACCINES: [
+        {id: 'BCG', name: 'BCG (Tuberculose)'},
+        {id: 'VPO', name: 'VPO (Polio oral)'},
+        {id: 'VPI', name: 'VPI (Polio injectable)'},
+        {id: 'PENTA', name: 'PENTA (Diphtérie, Tétanos, Coqueluche...)'},
+        {id: 'VAR', name: 'Rougeole'},
+        {id: 'VAA', name: 'VAA (Vitamine A)'},
+        {id: 'COVID', name: 'COVID-19'}
+    ]
+};
+
+// ==================== ÉTAT DE L'APPLICATION ====================
+let appState = {
+    vaccinations: [],
+    pendingSync: [],
+    isOnline: navigator.onLine,
+    agentName: 'Agent UNICEF',
+    lastSync: null
+};
+
+// ==================== INITIALISATION ====================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log(`${CONFIG.APP_NAME} v${CONFIG.VERSION} initialisation...`);
+    
+    // 1. Charger les données sauvegardées
+    loadSavedData();
+    
+    // 2. Initialiser l'interface
+    initializeUI();
+    
+    // 3. Configurer les écouteurs d'événements
+    setupEventListeners();
+    
+    // 4. Vérifier la connexion
+    updateConnectionStatus();
+    
+    // 5. Mettre à jour l'affichage
+    updateDashboard();
+    populateVillageSelect();
+    
+    console.log('Application prête. Mode:', appState.isOnline ? 'En ligne' : 'Hors ligne');
+});
+
+// ==================== FONCTIONS PRINCIPALES ====================
+
+// Charge les données depuis le localStorage
+function loadSavedData() {
+    try {
+        const saved = localStorage.getItem('vaxitrack_vaccinations');
+        if (saved) {
+            appState.vaccinations = JSON.parse(saved);
+            console.log(`${appState.vaccinations.length} vaccinations chargées`);
+        }
+        
+        const pending = localStorage.getItem('vaxitrack_pending');
+        if (pending) {
+            appState.pendingSync = JSON.parse(pending);
+        }
+        
+        const agent = localStorage.getItem('vaxitrack_agent');
+        if (agent) {
+            appState.agentName = agent;
+        }
+        
+        const lastSync = localStorage.getItem('vaxitrack_lastSync');
+        if (lastSync) {
+            appState.lastSync = new Date(lastSync);
+        }
+    } catch (error) {
+        console.error('Erreur chargement données:', error);
+        showNotification('⚠️ Erreur chargement données locales', 'warning');
+    }
+}
+
+// Sauvegarde les données dans le localStorage
+function saveData() {
+    try {
+        localStorage.setItem('vaxitrack_vaccinations', JSON.stringify(appState.vaccinations));
+        localStorage.setItem('vaxitrack_pending', JSON.stringify(appState.pendingSync));
+        localStorage.setItem('vaxitrack_agent', appState.agentName);
+        if (appState.lastSync) {
+            localStorage.setItem('vaxitrack_lastSync', appState.lastSync.toISOString());
+        }
+        console.log('Données sauvegardées localement');
+    } catch (error) {
+        console.error('Erreur sauvegarde:', error);
+        showNotification('⚠️ Erreur sauvegarde locale', 'warning');
+    }
+}
+
+// Enregistre une nouvelle vaccination
+function recordVaccination(formData) {
+    const vaccination = {
+        id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+        childName: formData.childName,
+        childAge: parseInt(formData.childAge),
+        childSex: formData.childSex,
+        village: formData.village,
+        vaccine: formData.vaccine,
+        vaccineDate: formData.vaccineDate,
+        vaccineDose: formData.vaccineDose,
+        notes: formData.notes,
+        agent: appState.agentName,
+        recordedAt: new Date().toISOString(),
+        synced: false
+    };
+    
+    // Ajouter aux listes
+    appState.vaccinations.unshift(vaccination);
+    appState.pendingSync.push(vaccination);
+    
+    // Sauvegarder
+    saveData();
+    
+    // Mettre à jour l'affichage
+    updateDashboard();
+    if (document.getElementById('liste').classList.contains('active')) {
+        displayVaccinationsList();
+    }
+    
+    // Synchroniser si en ligne
+    if (appState.isOnline && appState.pendingSync.length > 0) {
+        attemptSync();
+    }
+    
+    return vaccination;
+}
+
+// Tente de synchroniser avec le serveur
+async function attemptSync() {
+    if (!appState.isOnline || appState.pendingSync.length === 0) {
+        return { success: false, message: 'Pas de données à synchroniser ou hors ligne' };
+    }
+    
+    const syncButton = document.getElementById('btn-sync-now');
+    syncButton.disabled = true;
+    syncButton.innerHTML = '🔄 Synchronisation...';
+    
+    try {
+        // Simulation d'envoi au serveur
+        console.log(`Tentative de sync de ${appState.pendingSync.length} enregistrements...`);
+        
+        // ICI : Remplacer par un vrai appel API
+        // const response = await fetch(CONFIG.SYNC_ENDPOINT, {
+        //     method: 'POST',
+        //     headers: {'Content-Type': 'application/json'},
+        //     body: JSON.stringify({ vaccinations: appState.pendingSync })
+        // });
+        
+        // Simulation de délai réseau
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Simulation de succès (90% de chance)
+        const success = Math.random() > 0.1;
+        
+        if (success) {
+            // Marquer comme synchronisé
+            const syncedIds = appState.pendingSync.map(v => v.id);
+            appState.vaccinations.forEach(v => {
+                if (syncedIds.includes(v.id)) v.synced = true;
+            });
+            
+            appState.pendingSync = [];
+            appState.lastSync = new Date();
+            
+            saveData();
+            updateDashboard();
+            
+            showNotification(`✅ ${syncedIds.length} données synchronisées avec succès`, 'success');
+            
+            syncButton.innerHTML = '🔄 Synchronisé';
+            setTimeout(() => {
+                syncButton.innerHTML = '🔄 Synchroniser';
+                syncButton.disabled = false;
+            }, 2000);
+            
+            return { success: true, count: syncedIds.length };
+        } else {
+            throw new Error('Échec simulation serveur');
+        }
+        
+    } catch (error) {
+        console.error('Erreur synchronisation:', error);
+        showNotification('⚠️ Échec synchronisation. Réessayez plus tard.', 'danger');
+        
+        syncButton.innerHTML = '🔄 Échec - Réessayer';
+        setTimeout(() => {
+            syncButton.disabled = false;
+            syncButton.innerHTML = '🔄 Synchroniser';
+        }, 3000);
+        
+        return { success: false, error: error.message };
+    }
+}
+
+// Génère un rapport CSV
+function generateCSV() {
+    if (appState.vaccinations.length === 0) {
+        showNotification('Aucune donnée à exporter', 'warning');
+        return;
+    }
+    
+    const headers = ['Nom enfant', 'Âge (mois)', 'Sexe', 'Village', 'Vaccin', 'Date', 'Dose', 'Agent', 'Date enregistrement'];
+    
+    const csvRows = [
+        headers.join(','),
+        ...appState.vaccinations.map(v => [
+            `"${v.childName}"`,
+            v.childAge,
+            v.childSex,
+            `"${v.village}"`,
+            v.vaccine,
+            v.vaccineDate,
+            v.vaccineDose,
+            `"${v.agent}"`,
+            v.recordedAt
+        ].join(','))
+    ];
+    
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `vaxitrack_rapport_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showNotification('📥 Fichier CSV généré et téléchargé', 'success');
+}
+
+// ==================== FONCTIONS UI ====================
+
+// Initialise l'interface utilisateur
+function initializeUI() {
+    // Définir la date d'aujourd'hui comme valeur par défaut
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('vaccine-date').value = today;
+    
+    // Afficher le nom de l'agent
+    document.getElementById('agent-name').innerHTML = `Agent: <strong>${appState.agentName}</strong> | <span id="sync-status">${appState.isOnline ? '🟢 En ligne' : '🔴 Hors ligne'}</span>`;
+    
+    // Afficher dernière synchronisation
+    if (appState.lastSync) {
+        const formatted = appState.lastSync.toLocaleDateString('fr-FR') + ' ' + 
+                         appState.lastSync.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+        document.querySelector('.timestamp').textContent = formatted;
+    }
+}
+
+// Remplit la liste des villages
+function populateVillageSelect() {
+    const select = document.getElementById('child-village');
+    const filterSelect = document.getElementById('filter-village');
+    
+    // Garder la sélection actuelle
+    const currentValue = select.value;
+    const currentFilter = filterSelect.value;
+    
+    // Vider les options
+    select.innerHTML = '<option value="">Sélectionner un village</option>';
+    filterSelect.innerHTML = '<option value="">Tous les villages</option>';
+    
+    // Ajouter les villages
+    CONFIG.DEFAULT_VILLAGES.forEach(village => {
+        const option = document.createElement('option');
+        option.value = village;
+        option.textContent = village;
+        select.appendChild(option);
+        
+        const filterOption = document.createElement('option');
+        filterOption.value = village;
+        filterOption.textContent = village;
+        filterSelect.appendChild(filterOption);
+    });
+    
+    // Restaurer les sélections
+    select.value = currentValue;
+    filterSelect.value = currentFilter;
+}
+
+// Met à jour le tableau de bord
+function updateDashboard() {
+    // Totaux
+    document.getElementById('total-vaccinations').textContent = appState.vaccinations.length;
+    document.getElementById('pending-sync').textContent = appState.pendingSync.length;
+    
+    // Bouton synchronisation
+    const syncBtn = document.getElementById('btn-sync-now');
+    syncBtn.disabled = !appState.isOnline || appState.pendingSync.length === 0;
+    
+    // Rapports
+    document.getElementById('report-total').textContent = appState.vaccinations.length;
+    
+    const villages = [...new Set(appState.vaccinations.map(v => v.village))];
+    document.getElementById('report-villages').textContent = villages.length;
+    
+    const girls = appState.vaccinations.filter(v => v.childSex === 'F').length;
+    const boys = appState.vaccinations.filter(v => v.childSex === 'M').length;
+    document.getElementById('report-girls').textContent = girls;
+    document.getElementById('report-boys').textContent = boys;
+    
+    // Stockage utilisé (approximatif)
+    const used = JSON.stringify(appState).length / 1024;
+    document.querySelector('#app-storage span').textContent = `${used.toFixed(1)} KB`;
+}
+
+// Affiche la liste des vaccinations
+function displayVaccinationsList() {
+    const container = document.getElementById('vaccinations-list');
+    const searchTerm = document.getElementById('search-list').value.toLowerCase();
+    const filterVillage = document.getElementById('filter-village').value;
+    
+    // Filtrer
+    let filtered = appState.vaccinations;
+    
+    if (searchTerm) {
+        filtered = filtered.filter(v => 
+            v.childName.toLowerCase().includes(searchTerm) ||
+            v.village.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    if (filterVillage) {
+        filtered = filtered.filter(v => v.village === filterVillage);
+    }
+    
+    // Afficher
+    if (filtered.length === 0) {
+        container.innerHTML = '<p class="empty-state">Aucune vaccination ne correspond aux critères</p>';
+        return;
+    }
+    
+    container.innerHTML = filtered.map(v => `
+        <div class="vaccination-item" data-id="${v.id}">
+            <div class="vaccination-header">
+                <span class="vaccination-name">${v.childName}</span>
+                <span class="vaccination-village">${v.village}</span>
+            </div>
+            <div class="vaccination-details">
+                <div>
+                    <div class="detail-label">Âge/Sexe</div>
+                    <div>${v.childAge} mois (${v.childSex === 'M' ? 'Garçon' : 'Fille'})</div>
+                </div>
+                <div>
+                    <div class="detail-label">Vaccin</div>
+                    <div>${v.vaccine} - ${v.vaccineDose}</div>
+                </div>
+                <div>
+                    <div class="detail-label">Date</div>
+                    <div>${new Date(v.vaccineDate).toLocaleDateString('fr-FR')}</div>
+                </div>
+                <div>
+                    <div class="detail-label">Statut</div>
+                    <div>${v.synced ? '✅ Synchronisé' : '⏳ En attente'}</div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Affiche une notification
+function showNotification(message, type = 'info') {
+    const notification = document.getElementById('notification');
+    notification.textContent = message;
+    notification.className = `notification ${type}`;
+    
+    notification.classList.add('show');
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 5000);
+}
+
+// Met à jour le statut de connexion
+function updateConnectionStatus() {
+    const statusEl = document.getElementById('sync-status');
+    const syncBtn = document.getElementById('btn-sync-now');
+    
+    if (appState.isOnline) {
+        statusEl.innerHTML = '🟢 En ligne';
+        syncBtn.disabled = appState.pendingSync.length === 0;
+    } else {
+        statusEl.innerHTML = '🔴 Hors ligne';
+        syncBtn.disabled = true;
+    }
+}
+
+// ==================== GESTION DES ÉVÉNEMENTS ====================
+
+function setupEventListeners() {
+    // Onglets
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab');
+            
+            // Désactiver tous les onglets
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            
+            // Activer l'onglet sélectionné
+            this.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+            
+            // Mettre à jour le contenu spécifique
+            if (tabId === 'liste') {
+                displayVaccinationsList();
+            }
+        });
+    });
+    
+    // Formulaire d'enregistrement
+    const form = document.getElementById('vaccination-form');
+    const saveBtn = document.getElementById('btn-save-offline');
+    
+    saveBtn.addEventListener('click', function() {
+        // Validation basique
+        const childName = document.getElementById('child-name').value.trim();
+        const childAge = document.getElementById('child-age').value;
+        const childSex = document.getElementById('child-sex').value;
+        const village = document.getElementById('child-village').value;
+        const vaccine = document.getElementById('vaccine-type').value;
+        const vaccineDate = document.getElementById('vaccine-date').value;
+        
+        if (!childName || !childAge || !childSex || !village || !vaccine || !vaccineDate) {
+            showNotification('⚠️ Veuillez remplir tous les champs obligatoires (*)', 'warning');
+            return;
+        }
+        
+        // Enregistrer
+        const vaccination = recordVaccination({
+            childName,
+            childAge,
+            childSex,
+            village,
+            vaccine,
+            vaccineDate,
+            vaccineDose: document.getElementById('vaccine-dose').value,
+            notes: document.getElementById('agent-notes').value.trim()
+        });
+        
+        // Confirmation
+        const confirmation = document.getElementById('save-confirmation');
+        confirmation.style.display = 'block';
+        confirmation.querySelector('p').innerHTML = `✅ <strong>${vaccination.childName}</strong> enregistré(e) localement !`;
+        
+        // Réinitialiser le formulaire
+        form.reset();
+        document.getElementById('vaccine-date').value = new Date().toISOString().split('T')[0];
+        
+        // Cacher la confirmation après 5s
+        setTimeout(() => {
+            confirmation.style.display = 'none';
+        }, 5000);
+        
+        showNotification(`Vaccination de ${childName} enregistrée (${vaccine})`, 'success');
+    });
+    
+    // Synchronisation manuelle
+    document.getElementById('btn-sync-now').addEventListener('click', attemptSync);
+    
+    // Recherche dans la liste
+    document.getElementById('search-list').addEventListener('input', displayVaccinationsList);
+    document.getElementById('filter-village').addEventListener('change', displayVaccinationsList);
+    
+    // Export CSV
+    document.getElementById('btn-export-csv').addEventListener('click', generateCSV);
+    
+    /// REMPLACE TOUTE LA FONCTION EXISTANTE PAR CE CODE :
+
+document.getElementById('btn-generate-report').addEventListener('click', function() {
+    if (appState.vaccinations.length === 0) {
+        showNotification('Aucune donnée pour générer un rapport', 'warning');
+        return;
+    }
+    
+    showNotification('📄 Génération du rapport PDF en cours...', 'info');
+    
+    // Utiliser jsPDF pour créer un vrai PDF
+    const { jsPDF } = window.jspdf;
+    
+    // Créer nouveau document PDF
+    const doc = new jsPDF();
+    const today = new Date().toLocaleDateString('fr-FR');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // ===== 1. EN-TÊTE =====
+    doc.setFillColor(0, 119, 200); // Bleu UNICEF
+    doc.rect(0, 0, pageWidth, 30, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RAPPORT DE VACCINATION', pageWidth / 2, 15, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.text('UNICEF Tchad - VaxiTrack', pageWidth / 2, 23, { align: 'center' });
+    
+    // ===== 2. INFORMATIONS DE BASE =====
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    
+    let yPosition = 45;
+    
+    doc.text(`Date du rapport: ${today}`, 20, yPosition);
+    doc.text(`Agent: ${appState.agentName}`, 20, yPosition + 8);
+    doc.text(`Total vaccinations: ${appState.vaccinations.length}`, 20, yPosition + 16);
+    doc.text(`Données en attente de sync: ${appState.pendingSync.length}`, 20, yPosition + 24);
+    
+    // ===== 3. STATISTIQUES PAR VACCIN =====
+    yPosition = 85;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('STATISTIQUES PAR VACCIN', 20, yPosition);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    
+    // Calculer les pourcentages
+    const vaccineStats = {};
+    appState.vaccinations.forEach(v => {
+        vaccineStats[v.vaccine] = (vaccineStats[v.vaccine] || 0) + 1;
+    });
+    
+    yPosition += 10;
+    Object.entries(vaccineStats).forEach(([vaccine, count], index) => {
+        const percentage = ((count / appState.vaccinations.length) * 100).toFixed(1);
+        doc.text(`• ${vaccine}: ${count} vaccinations (${percentage}%)`, 25, yPosition);
+        yPosition += 6;
+    });
+    
+    // ===== 4. VILLAGES COUVERTS =====
+    yPosition += 10;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('VILLAGES COUVERTS', 20, yPosition);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    
+    const villages = [...new Set(appState.vaccinations.map(v => v.village))];
+    yPosition += 10;
+    
+    // Afficher les villages sur plusieurs colonnes si nécessaire
+    let col = 0;
+    const colWidth = 60;
+    villages.forEach((village, index) => {
+        const x = 25 + (col * colWidth);
+        doc.text(`• ${village}`, x, yPosition);
+        
+        if ((index + 1) % 3 === 0) {
+            col = 0;
+            yPosition += 6;
+        } else {
+            col++;
+        }
+    });
+    
+    // ===== 5. DERNIÈRES VACCINATIONS (tableau) =====
+    yPosition += 15;
+    if (yPosition > 250) {
+        doc.addPage();
+        yPosition = 20;
+    }
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('10 DERNIÈRES VACCINATIONS', 20, yPosition);
+    
+    // En-tête du tableau
+    yPosition += 8;
+    doc.setFillColor(240, 240, 240);
+    doc.rect(20, yPosition, pageWidth - 40, 8, 'F');
+    
+    doc.setFontSize(9);
+    doc.setTextColor(80, 80, 80);
+    doc.text('Date', 25, yPosition + 5);
+    doc.text('Enfant', 45, yPosition + 5);
+    doc.text('Âge', 85, yPosition + 5);
+    doc.text('Vaccin', 100, yPosition + 5);
+    doc.text('Village', 140, yPosition + 5);
+    
+    // Données du tableau
+    yPosition += 10;
+    doc.setTextColor(0, 0, 0);
+    
+    appState.vaccinations.slice(0, 10).forEach(vaccination => {
+        if (yPosition > 270) {
+            doc.addPage();
+            yPosition = 20;
+        }
+        
+        const date = new Date(vaccination.vaccineDate).toLocaleDateString('fr-FR');
+        doc.text(date, 25, yPosition);
+        doc.text(vaccination.childName.substring(0, 15), 45, yPosition);
+        doc.text(`${vaccination.childAge} mois`, 85, yPosition);
+        doc.text(vaccination.vaccine, 100, yPosition);
+        doc.text(vaccination.village.substring(0, 12), 140, yPosition);
+        
+        yPosition += 7;
+    });
+    
+    // ===== 6. PIED DE PAGE =====
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Généré automatiquement par VaxiTrack Tchad • Application offline pour agents de santé UNICEF', 
+             pageWidth / 2, 285, { align: 'center' });
+    
+    // ===== 7. SAUVEGARDER LE PDF =====
+    const filename = `rapport_vaccination_${today.replace(/\//g, '-')}.pdf`;
+    doc.save(filename);
+    
+    // ===== 8. NOTIFICATION ET ACTIVATION EMAIL =====
+    showNotification(`✅ PDF généré : ${filename}`, 'success');
+    document.getElementById('btn-email-report').disabled = false;
+});
+    
+    document.getElementById('btn-email-report').addEventListener('click', async function() {
+    showNotification('📧 Préparation de l\'envoi...', 'info');
+    
+    // 1. Créer un résumé pour le corps de l'email
+    const today = new Date().toLocaleDateString('fr-FR');
+    const total = appState.vaccinations.length;
+    const pending = appState.pendingSync.length;
+    const villages = [...new Set(appState.vaccinations.map(v => v.village))];
+    
+    const emailBody = `
+Bonjour,
+
+Voici le rapport de vaccination du ${today} :
+
+• Agent: ${appState.agentName}
+• Total vaccinations enregistrées: ${total}
+• Villages couverts: ${villages.length}
+• Données en attente de synchronisation: ${pending}
+• Liste des villages: ${villages.join(', ')}
+
+Les données détaillées sont en pièce jointe.
+
+Cordialement,
+VaxiTrack Tchad - Système de suivi vaccinal offline
+    `.trim();
+    
+    // 2. Option A: Ouvrir le client mail (SIMPLE)
+    const subject = `Rapport Vaccination ${today} - ${appState.agentName}`;
+    const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+    
+    window.location.href = mailtoLink;
+    
+    // 3. Option B: Envoyer via API (plus avancé)
+    // Voir section ci-dessous
+    
+    showNotification('✅ Rapport prêt à être envoyé', 'success');
+});
+    
+    // Synchronisation manuelle depuis paramètres
+    document.getElementById('btn-manual-sync').addEventListener('click', attemptSync);
+    
+    // Effacer données locales
+    document.getElementById('btn-clear-data').addEventListener('click', function() {
+        if (confirm('⚠️ Voulez-vous vraiment effacer TOUTES les données locales ? Cette action est irréversible.')) {
+            localStorage.clear();
+            appState.vaccinations = [];
+            appState.pendingSync = [];
+            
+            updateDashboard();
+            displayVaccinationsList();
+            
+            showNotification('🗑️ Toutes les données locales ont été effacées', 'danger');
+        }
+    });
+    
+    // Mise à jour nom agent
+    document.getElementById('setting-agent-name').addEventListener('change', function() {
+        appState.agentName = this.value || 'Agent UNICEF';
+        localStorage.setItem('vaxitrack_agent', appState.agentName);
+        document.getElementById('agent-name').innerHTML = `Agent: <strong>${appState.agentName}</strong> | <span id="sync-status">${appState.isOnline ? '🟢 En ligne' : '🔴 Hors ligne'}</span>`;
+        showNotification('Nom agent mis à jour', 'success');
+    });
+    
+    // Événements de connexion/déconnexion
+    window.addEventListener('online', function() {
+        appState.isOnline = true;
+        updateConnectionStatus();
+        showNotification('Connexion internet rétablie', 'success');
+        
+        // Tenter une synchronisation automatique
+        if (appState.pendingSync.length > 0) {
+            setTimeout(attemptSync, 1000);
+        }
+    });
+    
+    window.addEventListener('offline', function() {
+        appState.isOnline = false;
+        updateConnectionStatus();
+        showNotification('Vous êtes hors ligne. Les données sont sauvegardées localement.', 'warning');
+    });
+}
+
+// ==================== SERVICE WORKER COMMUNICATION ====================
+
+// Exposer certaines fonctions globalement si nécessaire
+window.VaxiTrack = {
+    recordVaccination,
+    attemptSync,
+    generateCSV,
+    getStats: () => ({
+        total: appState.vaccinations.length,
+        pending: appState.pendingSync.length,
+        lastSync: appState.lastSync
+    })
+};
