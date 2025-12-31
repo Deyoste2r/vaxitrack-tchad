@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h1>Test Offline Simple</h1>
+  <button onclick="testSW()">Tester Service Worker</button>
+  <script>
+    function testSW() {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+          .then(() => alert('SW enregistré!'))
+          .catch(err => alert('Erreur: ' + err));
+      } else {
+        alert('SW non supporté');
+      }
+    }
+  </script>
+</body>
+</html>

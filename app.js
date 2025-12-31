@@ -727,3 +727,54 @@ window.VaxiTrack = {
         lastSync: appState.lastSync
     })
 };
+// ==================== VÉRIFICATION OFFLINE ====================
+
+function checkOfflineCapabilities() {
+  console.log('=== VÉRIFICATION OFFLINE ===');
+  
+  // 1. Vérifie Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration().then(reg => {
+      if (reg) {
+        console.log('✅ Service Worker enregistré:', reg.scope);
+        console.log('✅ Service Worker actif:', reg.active ? 'OUI' : 'NON');
+        
+        // Vérifie le cache
+        caches.has('vaxitrack-v2.0-cache').then(hasCache => {
+          console.log('✅ Cache disponible:', hasCache ? 'OUI' : 'NON');
+          
+          if (hasCache) {
+            showNotification('✅ Mode offline activé', 'success');
+          } else {
+            showNotification('⚠️ Cache non disponible', 'warning');
+          }
+        });
+      } else {
+        console.log('❌ Service Worker non enregistré');
+        showNotification('⚠️ Mode offline non disponible', 'warning');
+      }
+    });
+  } else {
+    console.log('❌ Service Worker non supporté');
+    showNotification('⚠️ Navigateur incompatible avec mode offline', 'warning');
+  }
+  
+  // 2. Vérifie stockage
+  if ('localStorage' in window) {
+    console.log('✅ localStorage disponible');
+  }
+  
+  if ('indexedDB' in window) {
+    console.log('✅ IndexedDB disponible');
+  }
+  
+  // 3. Vérifie connexion
+  console.log('🌐 Connexion internet:', navigator.onLine ? 'OUI' : 'NON');
+  
+  if (!navigator.onLine) {
+    showNotification('📴 Mode offline - Les données sont sauvegardées localement', 'info');
+  }
+}
+
+// Exécute la vérification au démarrage
+setTimeout(checkOfflineCapabilities, 1000);

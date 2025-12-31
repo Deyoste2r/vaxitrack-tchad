@@ -236,13 +236,64 @@
     <!-- AJOUTE CETTE LIGNE juste avant </body> -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
-        // Enregistre le Service Worker pour le mode offline/PWA
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker enregistré'))
-                .catch(err => console.error('Échec enregistrement:', err));
+// === SERVICE WORKER AMÉLIORÉ ===
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    console.log('🚀 Début installation Service Worker...');
+    
+    navigator.serviceWorker.register('sw.js')
+      .then(function(registration) {
+        console.log('✅ Service Worker enregistré avec succès:', registration.scope);
+        
+        // Force l'activation immédiate
+        if (registration.waiting) {
+          console.log('🔄 Service Worker en attente - activation forcée');
+          registration.waiting.postMessage({type: 'SKIP_WAITING'});
         }
-    </script>
+        
+        // Vérifie les mises à jour
+        registration.update();
+        
+        // Affiche notification à l'utilisateur
+        showNotification('Service Worker installé - Mode offline activé', 'success');
+      })
+      .catch(function(error) {
+        console.log('❌ Échec enregistrement Service Worker:', error);
+        showNotification('Service Worker non installé. Mode offline limité.', 'warning');
+      });
+    
+    // Quand un nouveau Service Worker prend le contrôle
+    navigator.serviceWorker.addEventListener('controllerchange', function() {
+      console.log('🔄 Nouveau Service Worker activé ! Rechargement...');
+      showNotification('Mise à jour application - Rechargement...', 'info');
+      setTimeout(() => window.location.reload(), 1000);
+    });
+    
+    // Vérifie l'état actuel
+    navigator.serviceWorker.ready.then(function(registration) {
+      console.log('📱 Service Worker prêt:', registration.active ? 'ACTIF' : 'INACTIF');
+    });
+  });
+  
+  // Écoute les messages du Service Worker
+  navigator.serviceWorker.addEventListener('message', function(event) {
+    console.log('📨 Message SW:', event.data);
+  });
+} else {
+  console.log('❌ Service Worker non supporté par ce navigateur');
+  showNotification('Votre navigateur ne supporte pas le mode offline complet', 'warning');
+}
+
+// Fonction notification (déjà dans app.js, mais au cas où)
+function showNotification(message, type) {
+  console.log('📢 Notification:', message);
+  if (window.showNotification) {
+    window.showNotification(message, type);
+  } else {
+    alert(message);
+  }
+}
+</script>
     <script>
 // Compteur de visites simple
 const visitKey = 'vaxitrack_visits';
