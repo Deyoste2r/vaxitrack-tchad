@@ -94,6 +94,7 @@ const CONFIG = {
         {id: 'COVID', name: 'COVID-19'}
     ]
 };
+console.log('VaxiTrack Tchad v2.0 chargé'); // ← AJOUTE ICI
 
 // ==================== ÉTAT DE L'APPLICATION ====================
 let appState = {
@@ -1017,4 +1018,4 @@ window.appDebug = {
     resetData: window.initializeAppData
 };
 
-console.log('App.js chargé - Prêt à fonctionner!');
+console.log('VaxiTrack Tchad v2.0 chargé');
