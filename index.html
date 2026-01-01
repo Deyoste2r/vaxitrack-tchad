@@ -5,8 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VaxiTrack Tchad | Suivi Vaccination Offline</title>
     <link rel="stylesheet" href="style.css">
+    
+    <!-- UNE SEULE FOIS SheetJS -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    
+    <!-- jsPDF pour les rapports PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAkElEQVQ4jWP8//8/Ay0BE12MZ2BgYKC5C4yMjBgYGBgYqOqCvXv3Mv7//5+BioBqXqCqC1C9TzUv0MQFqN6nmhdo4gK8Lvj//z/D3r17GfGpIegCdN+jegGvC9A1o3uBwMjE7n2CLkD1PkEXoHofrwtQvY/XBejex+sCdO/jdAGm9/G6AN37OF2A7n2cLsD0Pk4XoHsfpwtweR+nC9C9j9MFuLyP0wXo3sfpAlzex+kCdO/jdAGu8MPpAlzhh9MFuMIPpwtwGUMQF2AEAABHeHZAD8IwFAAAAABJRU5ErkJggg==">
+    <link rel="icon" type="image/png" href="data:image/png;base64,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">
 </head>
 <body>
     <div class="container">
@@ -127,6 +134,7 @@
                     <input type="text" id="search-list" placeholder="Rechercher par nom ou village...">
                     <select id="filter-village">
                         <option value="">Tous les villages</option>
+                        <!-- Rempli dynamiquement par app.js -->
                     </select>
                 </div>
                 <div id="vaccinations-list" class="vaccinations-list">
@@ -138,56 +146,67 @@
             <!-- Onglet 3: Rapports -->
             <div id="rapports" class="tab-pane">
                 <div class="report-header">
-                    <h3>📊 Rapport de Performance</h3>
-                    <div class="report-period">
-                        <label>Période :</label>
-                        <select id="report-period">
-                            <option value="today">Aujourd'hui</option>
-                            <option value="week">Cette semaine</option>
-                            <option value="month">Ce mois</option>
-                            <option value="all">Tout</option>
-                        </select>
+                    <h3>📥 Télécharger des rapports</h3>
+                    <p class="report-subtitle">Choisissez le rapport adapté à votre besoin</p>
+                </div>
+
+                <div class="report-options">
+                    <!-- OPTION 1 : Données agent -->
+                    <div class="report-option">
+                        <div class="option-icon">📋</div>
+                        <div class="option-content">
+                            <h4>Mes données complètes</h4>
+                            <p class="option-desc">Toutes les vaccinations que vous avez enregistrées</p>
+                            <p class="option-user"><strong>Pour :</strong> Agent de terrain</p>
+                            <p class="option-use"><strong>Utilité :</strong> Vérifier votre travail, garder une trace</p>
+                        </div>
+                        <button class="btn-download" data-report="agent">
+                            ⬇️ Télécharger Excel
+                        </button>
+                    </div>
+
+                    <!-- OPTION 2 : Stats village -->
+                    <div class="report-option">
+                        <div class="option-icon">🏘️</div>
+                        <div class="option-content">
+                            <h4>Statistiques par village</h4>
+                            <p class="option-desc">Totaux par village : filles, garçons, couverture</p>
+                            <p class="option-user"><strong>Pour :</strong> Superviseur de zone</p>
+                            <p class="option-use"><strong>Utilité :</strong> Voir la couverture, identifier zones faibles</p>
+                        </div>
+                        <button class="btn-download" data-report="village">
+                            ⬇️ Télécharger Excel
+                        </button>
+                    </div>
+
+                    <!-- OPTION 3 : Répartition vaccin -->
+                    <div class="report-option">
+                        <div class="option-icon">💉</div>
+                        <div class="option-content">
+                            <h4>Répartition par vaccin</h4>
+                            <p class="option-desc">Nombre de chaque type de vaccin administré</p>
+                            <p class="option-user"><strong>Pour :</strong> Responsable logistique</p>
+                            <p class="option-use"><strong>Utilité :</strong> Gestion des stocks, réapprovisionnement</p>
+                        </div>
+                        <button class="btn-download" data-report="vaccine">
+                            ⬇️ Télécharger Excel
+                        </button>
                     </div>
                 </div>
 
-                <div class="report-cards">
-                    <div class="report-card">
-                        <h4>Couverture par Vaccin</h4>
-                        <div id="vaccine-chart" class="chart-placeholder">
-                            <!-- Graphique simple en CSS/JS -->
-                            <div class="chart-bar" style="--width: 80%;" data-label="BCG">BCG: 80%</div>
-                            <div class="chart-bar" style="--width: 65%;" data-label="PENTA">PENTA: 65%</div>
-                            <div class="chart-bar" style="--width: 90%;" data-label="VPO">VPO: 90%</div>
-                        </div>
-                    </div>
-
-                    <div class="report-card">
-                        <h4>Statistiques Clés</h4>
-                        <div class="stats-grid">
-                            <div class="stat-item">
-                                <span class="stat-number" id="report-total">0</span>
-                                <span class="stat-label">Total Vaccinations</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-number" id="report-villages">0</span>
-                                <span class="stat-label">Villages couverts</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-number" id="report-girls">0</span>
-                                <span class="stat-label">Filles vaccinées</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-number" id="report-boys">0</span>
-                                <span class="stat-label">Garçons vaccinés</span>
-                            </div>
-                        </div>
-                    </div>
+                <!-- PDF Report Button -->
+                <div class="form-actions" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                    <!--button id="btn-generate-report" class="btn btn-primary">
+                        📄 Générer Rapport PDF
+                    </button-->
+                    <!--button id="btn-email-report" class="btn btn-secondary" disabled>
+                        📧 Envoyer par Email
+                    </button-->
                 </div>
 
-                <div class="report-actions">
-                    <button id="btn-export-csv" class="btn btn-secondary">📥 Exporter CSV</button>
-                    <button id="btn-generate-report" class="btn btn-primary">📄 Générer Rapport PDF</button>
-                    <button id="btn-email-report" class="btn btn-secondary" disabled>📧 Envoyer à la hiérarchie</button>
+                <div class="report-info">
+                    <p>📌 <strong>Conseil :</strong> Les fichiers Excel s'ouvrent sur téléphone avec l'app "Excel" ou "Google Sheets".</p>
+                    <p>📌 <strong>Partage :</strong> Après téléchargement, partagez via WhatsApp, Bluetooth, ou email.</p>
                 </div>
             </div>
 
@@ -232,75 +251,38 @@
         <div id="notification" class="notification"></div>
     </div>
 
+    <!-- Scripts principaux -->
     <script src="app.js"></script>
-    <!-- AJOUTE CETTE LIGNE juste avant </body> -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script>
-// === SERVICE WORKER AMÉLIORÉ ===
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    console.log('🚀 Début installation Service Worker...');
     
-    navigator.serviceWorker.register('sw.js')
-      .then(function(registration) {
-        console.log('✅ Service Worker enregistré avec succès:', registration.scope);
-        
-        // Force l'activation immédiate
-        if (registration.waiting) {
-          console.log('🔄 Service Worker en attente - activation forcée');
-          registration.waiting.postMessage({type: 'SKIP_WAITING'});
+    <script>
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker enregistré:', reg.scope))
+                .catch(err => console.error('Erreur SW:', err));
         }
         
-        // Vérifie les mises à jour
-        registration.update();
+        // Compteur de visites simple
+        const visitKey = 'vaxitrack_visits';
+        let visits = localStorage.getItem(visitKey) || 0;
+        visits++;
+        localStorage.setItem(visitKey, visits);
+        console.log(`Visites VaxiTrack: ${visits}`);
         
-        // Affiche notification à l'utilisateur
-        showNotification('Service Worker installé - Mode offline activé', 'success');
-      })
-      .catch(function(error) {
-        console.log('❌ Échec enregistrement Service Worker:', error);
-        showNotification('Service Worker non installé. Mode offline limité.', 'warning');
-      });
-    
-    // Quand un nouveau Service Worker prend le contrôle
-    navigator.serviceWorker.addEventListener('controllerchange', function() {
-      console.log('🔄 Nouveau Service Worker activé ! Rechargement...');
-      showNotification('Mise à jour application - Rechargement...', 'info');
-      setTimeout(() => window.location.reload(), 1000);
-    });
-    
-    // Vérifie l'état actuel
-    navigator.serviceWorker.ready.then(function(registration) {
-      console.log('📱 Service Worker prêt:', registration.active ? 'ACTIF' : 'INACTIF');
-    });
-  });
-  
-  // Écoute les messages du Service Worker
-  navigator.serviceWorker.addEventListener('message', function(event) {
-    console.log('📨 Message SW:', event.data);
-  });
-} else {
-  console.log('❌ Service Worker non supporté par ce navigateur');
-  showNotification('Votre navigateur ne supporte pas le mode offline complet', 'warning');
-}
-
-// Fonction notification (déjà dans app.js, mais au cas où)
-function showNotification(message, type) {
-  console.log('📢 Notification:', message);
-  if (window.showNotification) {
-    window.showNotification(message, type);
-  } else {
-    alert(message);
-  }
-}
-</script>
-    <script>
-// Compteur de visites simple
-const visitKey = 'vaxitrack_visits';
-let visits = localStorage.getItem(visitKey) || 0;
-visits++;
-localStorage.setItem(visitKey, visits);
-console.log(`Visites VaxiTrack: ${visits}`);
-</script>
+        // Debug: Vérifier si les éléments existent au chargement
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM chargé');
+            console.log('child-village existe:', document.getElementById('child-village') ? 'OUI' : 'NON');
+            console.log('filter-village existe:', document.getElementById('filter-village') ? 'OUI' : 'NON');
+            
+            // Forcer le remplissage des villages après 2 secondes (au cas où)
+            setTimeout(function() {
+                if (typeof populateVillageSelect === 'function') {
+                    console.log('Appel de populateVillageSelect...');
+                    populateVillageSelect();
+                }
+            }, 2000);
+        });
+    </script>
 </body>
 </html>
