@@ -3,28 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VaxiTrack Tchad | Suivi Vaccination Offline</title>
-    <link rel="stylesheet" href="style.css">
-   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
+    <title>VaxiTrack Tchad v2.0 | Suivi Vaccination Offline</title>
     
-    <!-- UNE SEULE FOIS SheetJS -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <!-- METADONNEES OPTIMISEES -->
+    <meta name="description" content="Application de suivi vaccinal offline pour agents de santé UNICEF Tchad">
+    <meta name="theme-color" content="#0077c8">
     
-    <!-- jsPDF pour les rapports PDF -->
+    <!-- POLITIQUE DE CACHE MODEREE -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css?v=2.0">
+    
+    <!-- MANIFEST PWA -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- ICONE -->
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAkElEQVQ4jWP8//8/Ay0BE12MZ2BgYKC5C4yMjBgYGBgYqOqCvXv3Mv7//5+BioBqXqCqC1C9TzUv0MQFqN6nmhdo4gK8Lvj//z/D3r17GfGpIegCdN+jegGvC9A1o3uBwMjE7n2CLkD1PkEXoHpfpwtQvY/XBejex+sCdO/jdAGm9/G6AN37OF2A6X2cLsD0Pk4XYHofpwvQvY/TBbi8j9MF6N7H6QJc3sfpAnTv43QBrvDD6QJc4YfTDoIQGgAASX9zfwAAAABJRU5ErkJggg==">
+    
+    <!-- BIBLIOTHEQUES EXTERNES -->
+    <!-- jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="data:image/png;base64,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">
+    <!-- SheetJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <!-- En-tête avec infos agent -->
+        <!-- EN-TETE -->
         <header class="app-header">
             <div class="agent-info">
-                <h1>💉 VaxiTrack Tchad</h1>
-                <p id="agent-name">Agent: <strong>John Doe</strong> | <span id="sync-status">🟢 En ligne</span></p>
+                <h1>💉 VaxiTrack Tchad v2.0</h1>
+                <p id="agent-name">Agent: <strong>Agent UNICEF</strong> | <span id="sync-status">🟢 En ligne</span></p>
                 <p id="last-sync">Dernière synchro: <span class="timestamp">--/--/---- --:--</span></p>
             </div>
             <div class="stats">
@@ -39,7 +51,7 @@
             </div>
         </header>
 
-        <!-- Navigation par onglets -->
+        <!-- NAVIGATION -->
         <nav class="tabs">
             <button class="tab-btn active" data-tab="enregistrer">➕ Enregistrer</button>
             <button class="tab-btn" data-tab="liste">📋 Liste</button>
@@ -47,9 +59,9 @@
             <button class="tab-btn" data-tab="parametres">⚙️ Paramètres</button>
         </nav>
 
-        <!-- Contenu des onglets -->
+        <!-- CONTENU PRINCIPAL -->
         <main class="tab-content">
-            <!-- Onglet 1: Enregistrement -->
+            <!-- ONGLET 1: ENREGISTREMENT -->
             <div id="enregistrer" class="tab-pane active">
                 <form id="vaccination-form">
                     <div class="form-group">
@@ -76,7 +88,7 @@
                         <label for="child-village">Village/Localité *</label>
                         <select id="child-village" required>
                             <option value="">Sélectionner un village</option>
-                            <!-- Rempli dynamiquement par app.js -->
+                            <!-- Rempli dynamiquement -->
                         </select>
                     </div>
 
@@ -102,9 +114,9 @@
                         <div class="form-group">
                             <label for="vaccine-dose">Numéro de dose</label>
                             <select id="vaccine-dose">
-                                <option value="1">1ère dose</option>
-                                <option value="2">2ème dose</option>
-                                <option value="3">3ème dose</option>
+                                <option value="Dose 1">1ère dose</option>
+                                <option value="Dose 2">2ème dose</option>
+                                <option value="Dose 3">3ème dose</option>
                                 <option value="Rappel">Rappel</option>
                             </select>
                         </div>
@@ -117,7 +129,7 @@
 
                     <div class="form-actions">
                         <button type="button" id="btn-save-offline" class="btn btn-primary">
-                            💾 Sauvegarder (Hors-ligne)
+                            💾 Sauvegarder
                         </button>
                         <button type="button" id="btn-sync-now" class="btn btn-secondary" disabled>
                             🔄 Synchroniser
@@ -131,22 +143,21 @@
                 </div>
             </div>
 
-            <!-- Onglet 2: Liste -->
+            <!-- ONGLET 2: LISTE -->
             <div id="liste" class="tab-pane">
                 <div class="list-controls">
                     <input type="text" id="search-list" placeholder="Rechercher par nom ou village...">
                     <select id="filter-village">
                         <option value="">Tous les villages</option>
-                        <!-- Rempli dynamiquement par app.js -->
+                        <!-- Rempli dynamiquement -->
                     </select>
                 </div>
                 <div id="vaccinations-list" class="vaccinations-list">
-                    <!-- Rempli dynamiquement par app.js -->
                     <p class="empty-state">Aucune vaccination enregistrée.</p>
                 </div>
             </div>
 
-            <!-- Onglet 3: Rapports -->
+            <!-- ONGLET 3: RAPPORTS -->
             <div id="rapports" class="tab-pane">
                 <div class="report-header">
                     <h3>📥 Télécharger des rapports</h3>
@@ -154,42 +165,33 @@
                 </div>
 
                 <div class="report-options">
-                    <!-- OPTION 1 : Données agent -->
                     <div class="report-option">
                         <div class="option-icon">📋</div>
                         <div class="option-content">
                             <h4>Mes données complètes</h4>
-                            <p class="option-desc">Toutes les vaccinations que vous avez enregistrées</p>
-                            <p class="option-user"><strong>Pour :</strong> Agent de terrain</p>
-                            <p class="option-use"><strong>Utilité :</strong> Vérifier votre travail, garder une trace</p>
+                            <p class="option-desc">Toutes vos vaccinations enregistrées</p>
                         </div>
                         <button class="btn-download" data-report="agent">
                             ⬇️ Télécharger Excel
                         </button>
                     </div>
 
-                    <!-- OPTION 2 : Stats village -->
                     <div class="report-option">
                         <div class="option-icon">🏘️</div>
                         <div class="option-content">
                             <h4>Statistiques par village</h4>
-                            <p class="option-desc">Totaux par village : filles, garçons, couverture</p>
-                            <p class="option-user"><strong>Pour :</strong> Superviseur de zone</p>
-                            <p class="option-use"><strong>Utilité :</strong> Voir la couverture, identifier zones faibles</p>
+                            <p class="option-desc">Totaux par village : filles, garçons</p>
                         </div>
                         <button class="btn-download" data-report="village">
                             ⬇️ Télécharger Excel
                         </button>
                     </div>
 
-                    <!-- OPTION 3 : Répartition vaccin -->
                     <div class="report-option">
                         <div class="option-icon">💉</div>
                         <div class="option-content">
                             <h4>Répartition par vaccin</h4>
-                            <p class="option-desc">Nombre de chaque type de vaccin administré</p>
-                            <p class="option-user"><strong>Pour :</strong> Responsable logistique</p>
-                            <p class="option-use"><strong>Utilité :</strong> Gestion des stocks, réapprovisionnement</p>
+                            <p class="option-desc">Nombre de chaque type de vaccin</p>
                         </div>
                         <button class="btn-download" data-report="vaccine">
                             ⬇️ Télécharger Excel
@@ -197,29 +199,23 @@
                     </div>
                 </div>
 
-                <!-- PDF Report Button -->
-                <div class="form-actions" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
-                    <!--button id="btn-generate-report" class="btn btn-primary">
+                <div class="form-actions" style="margin-top: 30px; padding-top: 20px;">
+                    <button id="btn-generate-report" class="btn btn-primary">
                         📄 Générer Rapport PDF
-                    </button-->
-                    <!--button id="btn-email-report" class="btn btn-secondary" disabled>
-                        📧 Envoyer par Email
-                    </button-->
-                </div>
-
-                <div class="report-info">
-                    <p>📌 <strong>Conseil :</strong> Les fichiers Excel s'ouvrent sur téléphone avec l'app "Excel" ou "Google Sheets".</p>
-                    <p>📌 <strong>Partage :</strong> Après téléchargement, partagez via WhatsApp, Bluetooth, ou email.</p>
+                    </button>
+                    <button id="btn-export-csv" class="btn btn-secondary">
+                        📋 Exporter CSV
+                    </button>
                 </div>
             </div>
 
-            <!-- Onglet 4: Paramètres -->
+            <!-- ONGLET 4: PARAMETRES -->
             <div id="parametres" class="tab-pane">
                 <div class="settings-section">
                     <h3>Agent</h3>
                     <div class="form-group">
                         <label for="setting-agent-name">Nom de l'agent</label>
-                        <input type="text" id="setting-agent-name" value="John Doe">
+                        <input type="text" id="setting-agent-name" placeholder="Ex: Agent UNICEF">
                     </div>
                     <div class="form-group">
                         <label for="setting-agent-id">Identifiant UNICEF</label>
@@ -229,90 +225,52 @@
 
                 <div class="settings-section">
                     <h3>Synchronisation</h3>
-                    <div class="form-group">
-                        <label for="setting-sync-auto">
-                            <input type="checkbox" id="setting-sync-auto" checked>
-                            Synchronisation automatique
-                        </label>
-                        <small>Envoie les données dès qu'une connexion est détectée</small>
-                    </div>
                     <button id="btn-manual-sync" class="btn btn-secondary">🔄 Synchroniser maintenant</button>
                     <button id="btn-clear-data" class="btn btn-danger">🗑️ Effacer données locales</button>
                 </div>
 
                 <div class="settings-section">
                     <h3>À propos</h3>
-                    <p><strong>VaxiTrack Tchad v1.0</strong></p>
-                    <p>Application de suivi vaccinal offline-first pour les agents de santé communautaire.</p>
-                    <p>Développée pour le contexte tchadien.</p>
+                    <p><strong>VaxiTrack Tchad v2.0.0</strong></p>
+                    <p>Application offline pour agents de santé UNICEF Tchad</p>
                     <p id="app-storage">Stockage utilisé: <span>0 KB</span></p>
                 </div>
             </div>
         </main>
 
-        <!-- Notifications -->
+        <!-- NOTIFICATION -->
         <div id="notification" class="notification"></div>
     </div>
 
-    <!-- Scripts principaux -->
-    <script src="app.js?v=2.0"></script>
-<link rel="stylesheet" href="style.css?v=2.0">
+    <!-- SCRIPT PRINCIPAL SEULEMENT -->
+    <script src="app.js?v=2.0.0"></script>
     
+    <!-- SCRIPT INITIAL SIMPLE -->
     <script>
-    // 1. KILL SERVICE WORKER AND CACHE IMMÉDIATEMENT
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            console.log('Désinscription de', registrations.length, 'Service Workers');
-            for(let registration of registrations) {
-                registration.unregister();
-            }
-            return caches.keys().then(function(cacheNames) {
-                for(let cacheName of cacheNames) {
-                    caches.delete(cacheName);
+        // Script de démarrage minimal
+        console.log('🚀 VaxiTrack Tchad v2.0.0 - Initialisation...');
+        
+        // Compteur de visites
+        const visitKey = 'vaxitrack_visits_v2';
+        let visits = parseInt(localStorage.getItem(visitKey)) || 0;
+        visits++;
+        localStorage.setItem(visitKey, visits);
+        console.log(`📊 Visites: ${visits}`);
+        
+        // Vérification version
+        window.addEventListener('load', function() {
+            console.log('✅ Page complètement chargée');
+            console.log('🌐 Online:', navigator.onLine);
+            
+            // Vérifie si app.js a chargé la configuration
+            setTimeout(function() {
+                if (window.CONFIG && window.CONFIG.VERSION === '2.0.0') {
+                    console.log('✅ Version 2.0.0 correctement chargée');
+                } else {
+                    console.warn('⚠️ Version incorrecte ou non chargée');
                 }
-            });
-        }).then(function() {
-            console.log('Tous les caches nettoyés');
+            }, 1000);
         });
-    }
-
-    // 2. FORCE NO-CACHE RELOAD
-    window.addEventListener('load', function() {
-        if (!window.location.search.includes('nocache')) {
-            window.location.href = window.location.href + '?nocache=' + new Date().getTime();
-        }
-    });
-
-    // 3. VERSION CHECK - FORCE RELOAD IF OLD VERSION
-    setTimeout(function() {
-        const version = window.CONFIG ? window.CONFIG.VERSION : 'unknown';
-        console.log('Version détectée:', version);
-        if (version !== '2.0.0') {
-            console.warn('ANCIENNE VERSION DÉTECTÉE! Forcer rechargement...');
-            localStorage.setItem('force_reload', 'true');
-            window.location.reload(true);
-        }
-    }, 2000);
-
-    // 4. Compteur de visites
-    const visitKey = 'vaxitrack_visits_v2';
-    let visits = parseInt(localStorage.getItem(visitKey)) || 0;
-    visits++;
-    localStorage.setItem(visitKey, visits);
-    console.log(`Visites VaxiTrack v2.0: ${visits}`);
-
-    // 5. Debug initialisation
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM V2.0 chargé à:', new Date().toLocaleTimeString());
-        console.log('Configuration:', window.CONFIG ? 'PRÉSENTE' : 'ABSENTE');
-    });
-</script>
-<script src="js/app.js"></script>
-<!-- Solution 1: Télécharger et héberger localement -->
-<script src="js/jspdf.umd.min.js"></script>
- <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-<!-- Solution 2: Utiliser un autre CDN -->
-<script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    </script>
 </body>
 </html>

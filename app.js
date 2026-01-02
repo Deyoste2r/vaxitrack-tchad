@@ -1,36 +1,4 @@
-// ==================== ANTI-RAFRAÎCHISSEMENT AUTOMATIQUE ====================
-// Bloque tout rafraîchissement automatique
-if (window.location.search.includes('refresh') || 
-    window.location.search.includes('reload') ||
-    window.location.search.includes('auto')) {
-    console.warn('⚠️ Blocage rafraîchissement automatique');
-    // Supprime les paramètres problématiques
-    window.history.replaceState({}, document.title, window.location.pathname);
-}
-
-// Détecte et bloque setInterval de rafraîchissement
-const originalSetInterval = window.setInterval;
-window.setInterval = function(callback, delay) {
-    if (typeof callback === 'string' && 
-        (callback.includes('location.reload') || 
-         callback.includes('location.href'))) {
-        console.warn('⚠️ Blocage setInterval de rafraîchissement');
-        return null;
-    }
-    return originalSetInterval(callback, delay);
-};
-
-// Détecte et bloque setTimeout de rafraîchissement
-const originalSetTimeout = window.setTimeout;
-window.setTimeout = function(callback, delay) {
-    if (typeof callback === 'string' && 
-        (callback.includes('location.reload') || 
-         callback.includes('location.href'))) {
-        console.warn('⚠️ Blocage setTimeout de rafraîchissement');
-        return null;
-    }
-    return originalSetTimeout(callback, delay);
-};// ==================== CONFIGURATION ====================
+// ==================== CONFIGURATION ====================
 const CONFIG = {
     APP_NAME: 'VaxiTrack Tchad',
     VERSION: '2.0.0',
