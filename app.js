@@ -4,9 +4,8 @@ const CONFIG = {
     VERSION: '2.0.0',
     SYNC_ENDPOINT: 'https://api.mocky.io/api/v1/sync',
     
-    // ✅ LISTE COMPLÈTE DES VILLES ET VILLAGES DU TCHAD (triée alphabétiquement)
+    // ✅ LISTE COMPLÈTE DES VILLAGES ET VILLAGES DU TCHAD
     DEFAULT_VILLAGES: [
-        // Trier toutes les entrées une seule fois
         'Abou Deïa', 'Abéché', 'Adé', 'Adré', 'Am Dam', 'Am Sack', 'Am Timan', 'Am Zoer',
         'Aouzou', 'Assinet', 'Ati', 'Baga-Sola', 'Baguirmi', 'Bardai', 'Baro', 'Bébédjia',
         'Béboro', 'Béboto', 'Bédi', 'Bédigui', 'Bédjondo', 'Békamba', 'Békourou', 'Béladjia',
@@ -541,17 +540,23 @@ function setupEventListeners() {
             exportBtn.addEventListener('click', generateCSV);
         }
         
-        // Rapport PDF
-        const pdfBtn = document.getElementById('btn-generate-report');
-        if (pdfBtn) {
-            pdfBtn.addEventListener('click', generatePDFReport);
-        }
-        
-        // Email rapport
-        const emailBtn = document.getElementById('btn-email-report');
-        if (emailBtn) {
-            emailBtn.addEventListener('click', sendEmailReport);
-        }
+        // Export Excel (boutons rapports)
+        document.querySelectorAll('[data-report]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const reportType = this.getAttribute('data-report');
+                switch(reportType) {
+                    case 'agent':
+                        generateAgentReport();
+                        break;
+                    case 'village':
+                        generateVillageReport();
+                        break;
+                    case 'vaccine':
+                        generateVaccineReport();
+                        break;
+                }
+            });
+        });
         
         // Synchronisation manuelle (paramètres)
         const manualSyncBtn = document.getElementById('btn-manual-sync');
@@ -567,28 +572,67 @@ function setupEventListeners() {
                     localStorage.clear();
                     appState.vaccinations = [];
                     appState.pendingSync = [];
+                    appState.agentName = 'Agent UNICEF';
                     
                     updateDashboard();
                     displayVaccinationsList();
+                    
+                    // Réinitialiser le nom de l'agent dans l'input
+                    const agentInput = document.getElementById('setting-agent-name');
+                    if (agentInput) {
+                        agentInput.value = 'Agent UNICEF';
+                    }
                     
                     showNotification('🗑️ Toutes les données locales ont été effacées', 'danger');
                 }
             });
         }
         
-        // Mise à jour nom agent (ATTENTION: vérifier que l'élément existe)
+        // Mise à jour nom agent
         const agentNameInput = document.getElementById('setting-agent-name');
         if (agentNameInput) {
-            agentNameInput.addEventListener('change', function() {
-                appState.agentName = this.value || 'Agent UNICEF';
-                localStorage.setItem('vaxitrack_agent', appState.agentName);
+            // Définir la valeur initiale
+            agentNameInput.value = appState.agentName;
+            
+            // Écouter les changements
+            agentNameInput.addEventListener('input', function() {
+                const newName = this.value.trim() || 'Agent UNICEF';
                 
+                // Mettre à jour l'état
+                appState.agentName = newName;
+                
+                // Sauvegarder
+                localStorage.setItem('vaxitrack_agent', newName);
+                
+                // Mettre à jour l'affichage
                 const agentNameEl = document.getElementById('agent-name');
                 if (agentNameEl) {
-                    agentNameEl.innerHTML = `Agent: <strong>${appState.agentName}</strong> | <span id="sync-status">${appState.isOnline ? '🟢 En ligne' : '🔴 Hors ligne'}</span>`;
+                    agentNameEl.innerHTML = `Agent: <strong>${newName}</strong> | <span id="sync-status">${appState.isOnline ? '🟢 En ligne' : '🔴 Hors ligne'}</span>`;
                 }
                 
                 showNotification('👤 Nom agent mis à jour', 'success');
+                console.log('Nom agent changé:', newName);
+            });
+            
+            // Écouter aussi le blur (quand on quitte le champ)
+            agentNameInput.addEventListener('blur', function() {
+                if (this.value.trim() === '') {
+                    this.value = 'Agent UNICEF';
+                    agentNameInput.dispatchEvent(new Event('input'));
+                }
+            });
+        }
+        
+        // ID agent (optionnel)
+        const agentIdInput = document.getElementById('setting-agent-id');
+        if (agentIdInput) {
+            const savedId = localStorage.getItem('vaxitrack_agent_id');
+            if (savedId) {
+                agentIdInput.value = savedId;
+            }
+            
+            agentIdInput.addEventListener('input', function() {
+                localStorage.setItem('vaxitrack_agent_id', this.value.trim());
             });
         }
         
@@ -616,7 +660,7 @@ function setupEventListeners() {
     }
 }
 
-// ==================== EXPORT/IMPORT ====================
+// ==================== EXPORT CSV ====================
 
 function generateCSV() {
     if (appState.vaccinations.length === 0) {
@@ -625,7 +669,7 @@ function generateCSV() {
     }
     
     try {
-        const headers = ['Nom enfant', 'Âge (mois)', 'Sexe', 'Village', 'Vaccin', 'Date', 'Dose', 'Agent', 'Date enregistrement'];
+        const headers = ['Nom enfant', 'Âge (mois)', 'Sexe', 'Village', 'Vaccin', 'Date', 'Dose', 'Agent', 'Date enregistrement', 'Statut'];
         
         const csvRows = [
             headers.join(','),
@@ -638,7 +682,8 @@ function generateCSV() {
                 v.vaccineDate,
                 v.vaccineDose,
                 `"${v.agent}"`,
-                v.recordedAt
+                v.recordedAt,
+                v.synced ? 'Synchronisé' : 'En attente'
             ].join(','))
         ];
         
@@ -648,7 +693,7 @@ function generateCSV() {
         const url = URL.createObjectURL(blob);
         
         link.setAttribute('href', url);
-        link.setAttribute('download', `vaxitrack_rapport_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute('download', `vaxitrack_${new Date().toISOString().split('T')[0]}.csv`);
         link.style.visibility = 'hidden';
         
         document.body.appendChild(link);
@@ -656,98 +701,140 @@ function generateCSV() {
         document.body.removeChild(link);
         
         showNotification('📥 Fichier CSV téléchargé', 'success');
+        return true;
     } catch (error) {
         console.error('❌ Erreur génération CSV:', error);
         showNotification('⚠️ Erreur génération CSV', 'danger');
+        return false;
     }
 }
 
-// ==================== RAPPORTS PDF ====================
+// ==================== GENERATION EXCEL ====================
 
-function generatePDFReport() {
-    if (appState.vaccinations.length === 0) {
-        showNotification('Aucune donnée pour générer un rapport', 'warning');
-        return;
+function generateExcel(data, sheetName, fileName) {
+    if (!window.XLSX) {
+        showNotification('❌ Bibliothèque Excel non chargée', 'danger');
+        console.error('XLSX non disponible');
+        return false;
     }
-    
-    // Vérifier si jsPDF est disponible
-    if (typeof window.jspdf === 'undefined') {
-        showNotification('⚠️ Bibliothèque PDF non chargée', 'warning');
-        console.error('jsPDF non disponible');
-        return;
-    }
-    
-    showNotification('📄 Génération du rapport PDF en cours...', 'info');
     
     try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        const today = new Date().toLocaleDateString('fr-FR');
-        const pageWidth = doc.internal.pageSize.getWidth();
+        // Créer un nouveau workbook
+        const workbook = XLSX.utils.book_new();
         
-        // En-tête
-        doc.setFillColor(0, 119, 200);
-        doc.rect(0, 0, pageWidth, 30, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(20);
-        doc.setFont('helvetica', 'bold');
-        doc.text('RAPPORT DE VACCINATION', pageWidth / 2, 15, { align: 'center' });
-        doc.setFontSize(12);
-        doc.text('UNICEF Tchad - VaxiTrack', pageWidth / 2, 23, { align: 'center' });
+        // Convertir les données en worksheet
+        const worksheet = XLSX.utils.json_to_sheet(data);
         
-        // Informations de base
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'normal');
+        // Ajouter le worksheet au workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
         
-        let yPosition = 45;
-        doc.text(`Date du rapport: ${today}`, 20, yPosition);
-        doc.text(`Agent: ${appState.agentName}`, 20, yPosition + 8);
-        doc.text(`Total vaccinations: ${appState.vaccinations.length}`, 20, yPosition + 16);
-        doc.text(`Données en attente de sync: ${appState.pendingSync.length}`, 20, yPosition + 24);
+        // Générer le fichier Excel
+        XLSX.writeFile(workbook, fileName);
         
-        // Télécharger le fichier
-        const filename = `rapport_vaccination_${today.replace(/\//g, '-')}.pdf`;
-        doc.save(filename);
-        
-        showNotification(`✅ PDF généré: ${filename}`, 'success');
-        
-        // Activer le bouton email
-        const emailBtn = document.getElementById('btn-email-report');
-        if (emailBtn) {
-            emailBtn.disabled = false;
-        }
+        showNotification(`✅ Excel téléchargé: ${fileName}`, 'success');
+        return true;
     } catch (error) {
-        console.error('❌ Erreur génération PDF:', error);
-        showNotification('⚠️ Erreur génération PDF', 'danger');
+        console.error('❌ Erreur génération Excel:', error);
+        showNotification('⚠️ Erreur génération Excel', 'danger');
+        return false;
     }
 }
 
-function sendEmailReport() {
-    const today = new Date().toLocaleDateString('fr-FR');
-    const total = appState.vaccinations.length;
-    const pending = appState.pendingSync.length;
-    const villages = [...new Set(appState.vaccinations.map(v => v.village))];
+// 1. RAPPORT AGENT - Toutes les données
+function generateAgentReport() {
+    if (appState.vaccinations.length === 0) {
+        showNotification('Aucune donnée à exporter', 'warning');
+        return;
+    }
     
-    const subject = `Rapport Vaccination ${today} - ${appState.agentName}`;
-    const body = `
-Bonjour,
-
-Voici le rapport de vaccination du ${today} :
-
-• Agent: ${appState.agentName}
-• Total vaccinations enregistrées: ${total}
-• Villages couverts: ${villages.length}
-• Données en attente de synchronisation: ${pending}
-
-Cordialement,
-VaxiTrack Tchad - Système de suivi vaccinal offline
-    `.trim();
+    showNotification('📊 Génération du rapport Excel...', 'info');
     
-    const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailtoLink;
+    // Formater les données pour Excel
+    const excelData = appState.vaccinations.map(v => ({
+        'Date vaccination': new Date(v.vaccineDate).toLocaleDateString('fr-FR'),
+        'Enfant': v.childName,
+        'Âge (mois)': v.childAge,
+        'Sexe': v.childSex === 'M' ? 'Garçon' : 'Fille',
+        'Village': v.village,
+        'Vaccin': v.vaccine,
+        'Dose': v.vaccineDose,
+        'Agent': v.agent,
+        'Date enregistrement': new Date(v.recordedAt).toLocaleDateString('fr-FR'),
+        'Statut': v.synced ? 'Synchronisé' : 'En attente'
+    }));
     
-    showNotification('📧 Client email ouvert', 'success');
+    const fileName = `mes_vaccinations_${new Date().toISOString().split('T')[0]}.xlsx`;
+    generateExcel(excelData, 'Mes Vaccinations', fileName);
+}
+
+// 2. RAPPORT VILLAGE - Statistiques par village
+function generateVillageReport() {
+    if (appState.vaccinations.length === 0) {
+        showNotification('Aucune donnée à exporter', 'warning');
+        return;
+    }
+    
+    showNotification('🏘️ Génération statistiques par village...', 'info');
+    
+    // Calculer les statistiques par village
+    const villageStats = {};
+    
+    appState.vaccinations.forEach(v => {
+        if (!villageStats[v.village]) {
+            villageStats[v.village] = {
+                total: 0,
+                filles: 0,
+                garcons: 0
+            };
+        }
+        
+        villageStats[v.village].total++;
+        if (v.childSex === 'F') {
+            villageStats[v.village].filles++;
+        } else {
+            villageStats[v.village].garcons++;
+        }
+    });
+    
+    // Convertir en format Excel
+    const excelData = Object.entries(villageStats).map(([village, stats]) => ({
+        'Village': village,
+        'Total vaccinations': stats.total,
+        'Filles': stats.filles,
+        'Garçons': stats.garcons,
+        '% Filles': stats.total > 0 ? ((stats.filles / stats.total) * 100).toFixed(1) + '%' : '0%',
+        '% Garçons': stats.total > 0 ? ((stats.garcons / stats.total) * 100).toFixed(1) + '%' : '0%'
+    }));
+    
+    const fileName = `stats_villages_${new Date().toISOString().split('T')[0]}.xlsx`;
+    generateExcel(excelData, 'Par Village', fileName);
+}
+
+// 3. RAPPORT VACCIN - Répartition par type de vaccin
+function generateVaccineReport() {
+    if (appState.vaccinations.length === 0) {
+        showNotification('Aucune donnée à exporter', 'warning');
+        return;
+    }
+    
+    showNotification('💉 Génération répartition par vaccin...', 'info');
+    
+    // Calculer par vaccin
+    const vaccineStats = {};
+    
+    appState.vaccinations.forEach(v => {
+        vaccineStats[v.vaccine] = (vaccineStats[v.vaccine] || 0) + 1;
+    });
+    
+    // Convertir en format Excel
+    const excelData = Object.entries(vaccineStats).map(([vaccin, count]) => ({
+        'Vaccin': vaccin,
+        'Nombre administré': count,
+        'Pourcentage': ((count / appState.vaccinations.length) * 100).toFixed(1) + '%'
+    }));
+    
+    const fileName = `repartition_vaccins_${new Date().toISOString().split('T')[0]}.xlsx`;
+    generateExcel(excelData, 'Par Vaccin', fileName);
 }
 
 // ==================== VÉRIFICATION OFFLINE ====================
@@ -758,9 +845,19 @@ function checkOfflineCapabilities() {
     // localStorage
     if ('localStorage' in window) {
         console.log('✅ localStorage disponible');
+        
+        // Teste écriture/lecture
+        try {
+            localStorage.setItem('vaxitrack_test', 'test');
+            localStorage.removeItem('vaxitrack_test');
+            console.log('✅ localStorage fonctionnel');
+        } catch (e) {
+            console.error('❌ localStorage plein ou bloqué:', e);
+            showNotification('⚠️ Stockage local plein ou bloqué', 'warning');
+        }
     } else {
         console.log('❌ localStorage non disponible');
-        showNotification('⚠️ localStorage non supporté', 'warning');
+        showNotification('⚠️ Stockage local non disponible', 'warning');
     }
     
     // IndexedDB
@@ -780,9 +877,12 @@ function checkOfflineCapabilities() {
         navigator.serviceWorker.getRegistration().then(reg => {
             if (reg) {
                 console.log('✅ Service Worker enregistré:', reg.scope);
+                showNotification('✅ Mode offline activé', 'success');
             } else {
-                console.log('ℹ️ Service Worker non enregistré');
+                console.log('ℹ️ Service Worker non enregistré - mode online seulement');
             }
+        }).catch(err => {
+            console.log('❌ Erreur Service Worker:', err);
         });
     }
 }
@@ -795,15 +895,34 @@ window.debugApp = {
         console.log('État de l\'app:', appState);
         return appState;
     },
-    resetApp: () => {
-        if (confirm('⚠️ Réinitialiser toute l\'application?')) {
-            localStorage.clear();
-            location.reload();
-        }
+    clearAll: () => {
+        localStorage.clear();
+        location.reload();
     },
-    testNotification: (message) => {
-        showNotification(message || 'Test notification', 'info');
+    exportJSON: () => {
+        const dataStr = JSON.stringify(appState.vaccinations, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        const link = document.createElement('a');
+        link.setAttribute('href', dataUri);
+        link.setAttribute('download', 'vaxitrack_data.json');
+        link.click();
+    },
+    testExcel: () => {
+        generateAgentReport();
+    },
+    testCSV: () => {
+        generateCSV();
     }
 };
+
+// Vérifie si XLSX est chargé
+setTimeout(() => {
+    if (window.XLSX) {
+        console.log('✅ XLSX (SheetJS) chargé avec succès');
+    } else {
+        console.error('❌ XLSX (SheetJS) non chargé');
+        showNotification('⚠️ Bibliothèque Excel non chargée', 'warning');
+    }
+}, 2000);
 
 console.log('🚀 VaxiTrack Tchad v2.0.0 - Code prêt');
