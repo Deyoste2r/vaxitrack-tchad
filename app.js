@@ -1,7 +1,7 @@
 // ==================== CONFIGURATION ====================
 const CONFIG = {
     APP_NAME: 'VaxiTrack Tchad',
-    VERSION: '1.0.0',
+    VERSION: '2.0.0',
     SYNC_ENDPOINT: 'https://api.mocky.io/api/v1/sync',
     
     // ✅ LISTE COMPLÈTE DES VILLES ET VILLAGES DU TCHAD
@@ -94,7 +94,7 @@ const CONFIG = {
         {id: 'COVID', name: 'COVID-19'}
     ]
 };
-console.log('VaxiTrack Tchad v2.0 chargé'); // ← AJOUTE ICI
+console.log('=== VaxiTrack Tchad v2.0.0 - ' + new Date().toISOString() + ' ===');
 
 // ==================== ÉTAT DE L'APPLICATION ====================
 let appState = {
@@ -1018,4 +1018,4 @@ window.appDebug = {
     resetData: window.initializeAppData
 };
 
-console.log('VaxiTrack Tchad v2.0 chargé');
+console.log('App.js v2.0.0 chargé - Prêt à fonctionner!');

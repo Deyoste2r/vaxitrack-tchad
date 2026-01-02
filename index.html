@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VaxiTrack Tchad | Suivi Vaccination Offline</title>
     <link rel="stylesheet" href="style.css">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
     
@@ -259,15 +259,53 @@
 <link rel="stylesheet" href="style.css?v=2.0">
     
     <script>
-    // Désinscrit tous les Service Workers
+    // 1. KILL SERVICE WORKER AND CACHE IMMÉDIATEMENT
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            console.log('Désinscription de', registrations.length, 'Service Workers');
             for(let registration of registrations) {
                 registration.unregister();
-                console.log('Service Worker désinscrit');
             }
+            return caches.keys().then(function(cacheNames) {
+                for(let cacheName of cacheNames) {
+                    caches.delete(cacheName);
+                }
+            });
+        }).then(function() {
+            console.log('Tous les caches nettoyés');
         });
     }
+
+    // 2. FORCE NO-CACHE RELOAD
+    window.addEventListener('load', function() {
+        if (!window.location.search.includes('nocache')) {
+            window.location.href = window.location.href + '?nocache=' + new Date().getTime();
+        }
+    });
+
+    // 3. VERSION CHECK - FORCE RELOAD IF OLD VERSION
+    setTimeout(function() {
+        const version = window.CONFIG ? window.CONFIG.VERSION : 'unknown';
+        console.log('Version détectée:', version);
+        if (version !== '2.0.0') {
+            console.warn('ANCIENNE VERSION DÉTECTÉE! Forcer rechargement...');
+            localStorage.setItem('force_reload', 'true');
+            window.location.reload(true);
+        }
+    }, 2000);
+
+    // 4. Compteur de visites
+    const visitKey = 'vaxitrack_visits_v2';
+    let visits = parseInt(localStorage.getItem(visitKey)) || 0;
+    visits++;
+    localStorage.setItem(visitKey, visits);
+    console.log(`Visites VaxiTrack v2.0: ${visits}`);
+
+    // 5. Debug initialisation
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM V2.0 chargé à:', new Date().toLocaleTimeString());
+        console.log('Configuration:', window.CONFIG ? 'PRÉSENTE' : 'ABSENTE');
+    });
 </script>
 </body>
 </html>
