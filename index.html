@@ -259,34 +259,15 @@
 <link rel="stylesheet" href="style.css?v=2.0">
     
     <script>
-        // Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker enregistré:', reg.scope))
-                .catch(err => console.error('Erreur SW:', err));
-        }
-        
-        // Compteur de visites simple
-        const visitKey = 'vaxitrack_visits';
-        let visits = localStorage.getItem(visitKey) || 0;
-        visits++;
-        localStorage.setItem(visitKey, visits);
-        console.log(`Visites VaxiTrack: ${visits}`);
-        
-        // Debug: Vérifier si les éléments existent au chargement
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM chargé');
-            console.log('child-village existe:', document.getElementById('child-village') ? 'OUI' : 'NON');
-            console.log('filter-village existe:', document.getElementById('filter-village') ? 'OUI' : 'NON');
-            
-            // Forcer le remplissage des villages après 2 secondes (au cas où)
-            setTimeout(function() {
-                if (typeof populateVillageSelect === 'function') {
-                    console.log('Appel de populateVillageSelect...');
-                    populateVillageSelect();
-                }
-            }, 2000);
+    // Désinscrit tous les Service Workers
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for(let registration of registrations) {
+                registration.unregister();
+                console.log('Service Worker désinscrit');
+            }
         });
-    </script>
+    }
+</script>
 </body>
 </html>
